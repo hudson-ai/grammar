@@ -1,19 +1,55 @@
+use std::collections::HashSet;
 use std::fmt;
 
+#[derive(PartialEq, Eq, Hash)]
+struct EarleyItem<'a> {
+    production: &'a Production<'a>,
+    pos: usize,
+    start: usize,
+}
+
+struct EarleyParser<'a> {
+    grammar: &'a Grammar<'a>,
+    pos: usize,
+    state_sets: Vec<HashSet<EarleyItem<'a>>>,
+}
+
+impl<'a> From<&'a Grammar<'a>> for EarleyParser<'a> {
+    fn from(grammar: &'a Grammar) -> Self {
+        let state_set = HashSet::<EarleyItem>::from_iter(
+            grammar
+                .productions
+                .iter()
+                .map(|production| EarleyItem::from(production)),
+        );
+        EarleyParser {
+            grammar,
+            pos: 1,
+            state_sets: vec![state_set],
+        }
+    }
+}
+
+impl<'a> From<&'a Production<'a>> for EarleyItem<'a> {
+    fn from(production: &'a Production) -> Self {
+        EarleyItem {
+            production,
+            pos: 0,
+            start: 0, // Uh oh, need to set this
+        }
+    }
+}
+
+#[derive(PartialEq, Eq, Hash)]
 enum Symbol {
     Terminal(Vec<char>),
     Nonterminal { name: String },
 }
 
+#[derive(PartialEq, Eq, Hash)]
 struct Production<'a> {
     nonterminal: &'a Symbol, //TODO: type-narrow??
     symbols: Vec<&'a Symbol>,
-}
-
-struct EarleyItem<'a> {
-    pos: usize,
-    start: usize,
-    production: &'a Production<'a>,
 }
 
 struct Grammar<'a> {
@@ -133,5 +169,10 @@ pub fn main() {
             },
         ],
     };
-    print!("{}", grammar);
+    // print!("{}", grammar);
+    let parser = EarleyParser::from(&grammar);
+    let s = parser.state_sets.get(0).unwrap();
+    for item in s.iter() {
+        println!("{}", item)
+    }
 }
