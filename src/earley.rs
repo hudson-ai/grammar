@@ -45,14 +45,17 @@ impl fmt::Display for Symbol {
             Symbol::Terminal(chars) => {
                 if chars.len() > 1 {
                     write!(f, "[")?;
+                } else {
+                    write!(f, "'")?;
                 }
                 for ch in chars.iter() {
                     write!(f, "{}", ch)?;
                 }
                 if chars.len() > 1 {
-                    write!(f, "]")?;
+                    write!(f, "]")
+                } else {
+                    write!(f, "'")
                 }
-                write!(f, "")
             }
             Symbol::Nonterminal { name, .. } => write!(f, "{}", name),
         }
