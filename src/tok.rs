@@ -21,8 +21,7 @@ impl SyntaxError {
 
 pub fn tokenize(string: &str) -> Result<Vec<Token>, SyntaxError> {
     let mut tokens: Vec<Token> = Vec::new();
-    let mut iter = string.chars();
-    while let Some(ch) = iter.next() {
+    for ch in string.chars() {
         let tok = match ch {
             '0'..='9' => Digit(ch),
             '+' => Plus,
