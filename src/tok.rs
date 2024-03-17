@@ -8,7 +8,18 @@ pub enum Token {
     RParen,
 }
 
-pub fn tokenize(string: &str) -> Vec<Token> {
+#[derive(Debug)]
+pub struct SyntaxError {
+    message: String,
+}
+
+impl SyntaxError {
+    fn new(message: String) -> SyntaxError {
+        SyntaxError { message }
+    }
+}
+
+pub fn tokenize(string: &str) -> Result<Vec<Token>, SyntaxError> {
     let mut tokens: Vec<Token> = Vec::new();
     let mut iter = string.chars();
     while let Some(ch) = iter.next() {
@@ -18,10 +29,9 @@ pub fn tokenize(string: &str) -> Vec<Token> {
             '(' => LParen,
             ')' => RParen,
             ch if ch.is_whitespace() => continue,
-            _ => panic!("Unexpected character '{}'", ch),
+            _ => return Err(SyntaxError::new(format!("Unexpected character '{}'", ch))),
         };
         tokens.push(tok)
-    };
-    tokens
+    }
+    Ok(tokens)
 }
-
