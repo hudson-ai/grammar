@@ -1,43 +1,55 @@
 use std::fmt;
 
-#[derive(Debug)]
-enum Symbol {
+enum Symbol<'a> {
     Terminal(char),
-    Nonterminal,
+    Nonterminal(&'a Nonterminal),
 }
 
-struct Rule {
-    lhs: Symbol,
-    rhs: Vec<Symbol>,
+struct Nonterminal {
+    name: String,
 }
 
-struct EarleyItem {
+struct Production<'a> {
+    nonterminal: &'a Nonterminal,
+    symbols: Vec<Symbol<'a>>,
+}
+
+struct EarleyItem<'a> {
     pos: usize,
     start: usize,
-    rule: Rule,
+    production: Production<'a>,
 }
 
-impl fmt::Display for Rule {
+impl fmt::Display for Production<'_> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{:?} ->", self.lhs)?;
-        for item in self.rhs.iter() {
-            write!(f, " {:?}", item)?;
+        write!(f, "{} ->", self.nonterminal.name)?; // TODO: implement nonterminal fmt::Display?
+        for symbol in self.symbols.iter() {
+            write!(f, " {}", symbol)?;
         }
         write!(f, "")
     }
 }
 
-impl fmt::Display for EarleyItem {
+impl fmt::Display for Symbol<'_> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let rule = &self.rule;
-        write!(f, "{:?} ->", rule.lhs)?;
-        for (i, item) in rule.rhs.iter().enumerate() {
+        match self {
+            Symbol::Terminal(ch) => write!(f, "{}", ch),
+            Symbol::Nonterminal(Nonterminal { name, .. }) => write!(f, "{}", name),
+        }
+    }
+}
+
+impl fmt::Display for EarleyItem<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let prod = &self.production;
+        write!(f, "{} ->", prod.nonterminal.name)?;
+        for (i, symbol) in prod.symbols.iter().enumerate() {
             if i == self.pos {
                 write!(f, " •")?;
             };
-            write!(f, " {:?}", item)?;
+            write!(f, " {}", symbol)?;
         }
-        if self.pos == rule.rhs.len() {
+        if self.pos == prod.symbols.len() {
             write!(f, " •")?;
         }
         write!(f, " ({})", self.start)
@@ -45,16 +57,18 @@ impl fmt::Display for EarleyItem {
 }
 
 pub fn main() {
-    let rule = Rule {
-        lhs: Symbol::Nonterminal,
-        rhs: vec![Symbol::Terminal('a'), Symbol::Terminal('b')],
+    let number = Nonterminal {
+        name: "Number".to_string(),
     };
-    println!("{}", rule);
-
-    let ear = EarleyItem {
+    let prod = Production {
+        nonterminal: &number,
+        symbols: vec![Symbol::Nonterminal(&number), Symbol::Terminal('9')],
+    };
+    println!("{}", prod);
+    let ear: EarleyItem = EarleyItem {
         pos: 1,
         start: 1,
-        rule,
+        production: prod,
     };
     println!("{}", ear);
 }
