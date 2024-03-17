@@ -6,35 +6,43 @@ enum Symbol {
     Nonterminal,
 }
 
-struct EarleyItem {
-    pos: usize,
-    start: usize,
+struct Rule {
     lhs: Symbol,
     rhs: Vec<Symbol>,
 }
 
+struct EarleyItem {
+    pos: usize,
+    start: usize,
+    rule: Rule,
+}
+
 impl fmt::Display for EarleyItem {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{:?} ->", self.lhs)?;
-        for (i, item) in self.rhs.iter().enumerate() {
+        let rule = &self.rule;
+        write!(f, "{:?} ->", rule.lhs)?;
+        for (i, item) in rule.rhs.iter().enumerate() {
             if i == self.pos {
                 write!(f, " •")?;
             };
             write!(f, " {:?}", item)?;
         }
-        if self.pos == self.rhs.len() {
+        if self.pos == rule.rhs.len() {
             write!(f, " •")?;
         }
         write!(f, " ({})", self.start)
     }
 }
 
-fn main() {
+pub fn main() {
+    let rule = Rule {
+        lhs: Symbol::Nonterminal,
+        rhs: vec![Symbol::Terminal('a'), Symbol::Terminal('b')],
+    };
     let ear = EarleyItem {
         pos: 1,
         start: 1,
-        lhs: Symbol::Nonterminal,
-        rhs: vec![Symbol::Terminal('a'), Symbol::Terminal('b')],
+        rule
     };
     println!("{}", ear)
 }

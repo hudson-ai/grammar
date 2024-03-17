@@ -34,3 +34,11 @@ pub fn tokenize(string: &str) -> Result<Vec<Token>, SyntaxError> {
     }
     Ok(tokens)
 }
+
+fn main() {
+    let string = "3 + 4 + (5 + 6)";
+    let tokens = tok::tokenize(string).unwrap();
+    for token in tokens {
+        println!("{:?}", token)
+    }
+}
