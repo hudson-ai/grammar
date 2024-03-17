@@ -17,6 +17,16 @@ struct EarleyItem {
     rule: Rule,
 }
 
+impl fmt::Display for Rule {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{:?} ->", self.lhs)?;
+        for item in self.rhs.iter() {
+            write!(f, " {:?}", item)?;
+        }
+        write!(f, "")
+    }
+}
+
 impl fmt::Display for EarleyItem {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let rule = &self.rule;
@@ -39,10 +49,12 @@ pub fn main() {
         lhs: Symbol::Nonterminal,
         rhs: vec![Symbol::Terminal('a'), Symbol::Terminal('b')],
     };
+    println!("{}", rule);
+
     let ear = EarleyItem {
         pos: 1,
         start: 1,
-        rule
+        rule,
     };
-    println!("{}", ear)
+    println!("{}", ear);
 }
