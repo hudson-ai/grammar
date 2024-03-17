@@ -16,26 +16,28 @@ struct EarleyParser<'a> {
 
 impl<'a> From<&'a Grammar<'a>> for EarleyParser<'a> {
     fn from(grammar: &'a Grammar) -> Self {
+        let start = 0_usize;
+        let pos = 0_usize;
         let state_set = HashSet::<EarleyItem>::from_iter(
             grammar
                 .productions
                 .iter()
-                .map(|production| EarleyItem::from(production)),
+                .map(|production| EarleyItem::from_production(production, start)),
         );
         EarleyParser {
             grammar,
-            pos: 1,
+            pos,
             state_sets: vec![state_set],
         }
     }
 }
 
-impl<'a> From<&'a Production<'a>> for EarleyItem<'a> {
-    fn from(production: &'a Production) -> Self {
+impl<'a> EarleyItem<'a> {
+    fn from_production(production: &'a Production, start: usize) -> Self {
         EarleyItem {
             production,
             pos: 0,
-            start: 0, // Uh oh, need to set this
+            start: start,
         }
     }
 }
@@ -171,7 +173,7 @@ pub fn main() {
     };
     // print!("{}", grammar);
     let parser = EarleyParser::from(&grammar);
-    let s = parser.state_sets.get(0).unwrap();
+    let s = parser.state_sets.first().unwrap();
     for item in s.iter() {
         println!("{}", item)
     }
