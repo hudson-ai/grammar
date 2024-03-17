@@ -80,15 +80,52 @@ impl fmt::Display for EarleyItem<'_> {
 }
 
 pub fn main() {
+    let sum = Symbol::Nonterminal {
+        name: "Sum".to_string(),
+    };
+    let product = Symbol::Nonterminal {
+        name: "Product".to_string(),
+    };
+    let factor = Symbol::Nonterminal {
+        name: "Factor".to_string(),
+    };
     let number = Symbol::Nonterminal {
         name: "Number".to_string(),
     };
+    let pm = Symbol::Terminal(vec!['+', '-']);
+    let md = Symbol::Terminal(vec!['*', '/']);
+    let lparen = Symbol::Terminal(vec!['(']);
+    let rparen = Symbol::Terminal(vec![')']);
     let digit = Symbol::Terminal(('0'..='9').collect());
     let grammar = Grammar {
         productions: vec![
             Production {
+                nonterminal: &sum,
+                symbols: vec![&sum, &pm, &product],
+            },
+            Production {
+                nonterminal: &sum,
+                symbols: vec![&product],
+            },
+            Production {
+                nonterminal: &product,
+                symbols: vec![&product, &md, &factor],
+            },
+            Production {
+                nonterminal: &product,
+                symbols: vec![&factor],
+            },
+            Production {
+                nonterminal: &factor,
+                symbols: vec![&lparen, &sum, &rparen],
+            },
+            Production {
+                nonterminal: &factor,
+                symbols: vec![&number],
+            },
+            Production {
                 nonterminal: &number,
-                symbols: vec![&number, &digit],
+                symbols: vec![&digit, &number],
             },
             Production {
                 nonterminal: &number,
