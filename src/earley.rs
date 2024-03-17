@@ -1,7 +1,7 @@
 use std::fmt;
 
 enum Symbol<'a> {
-    Terminal(char),
+    Terminal(Vec<char>),
     Nonterminal(&'a Nonterminal),
 }
 
@@ -33,7 +33,14 @@ impl fmt::Display for Production<'_> {
 impl fmt::Display for Symbol<'_> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Symbol::Terminal(ch) => write!(f, "{}", ch),
+            Symbol::Terminal(chars) => {
+                if chars.len() > 1 { write!(f, "[")?; }
+                for ch in chars {
+                    write!(f, "{}", ch)?;
+                }
+                if chars.len() > 1 { write!(f, "]")?; }
+                write!(f, "")
+            }
             Symbol::Nonterminal(Nonterminal { name, .. }) => write!(f, "{}", name),
         }
     }
@@ -62,7 +69,7 @@ pub fn main() {
     };
     let prod = Production {
         nonterminal: &number,
-        symbols: vec![Symbol::Nonterminal(&number), Symbol::Terminal('9')],
+        symbols: vec![Symbol::Nonterminal(&number), Symbol::Terminal(('0'..='9').collect())],
     };
     println!("{}", prod);
     let ear: EarleyItem = EarleyItem {
