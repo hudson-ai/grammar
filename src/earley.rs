@@ -14,6 +14,13 @@ struct EarleyParser<'a> {
     state_sets: Vec<HashSet<EarleyItem<'a>>>,
 }
 
+impl<'a> EarleyItem<'a> {
+    fn next_symbol(&'a self) -> Option<&'a Symbol> {
+        self.production.symbols.get(self.pos).copied()
+    }
+}
+
+
 impl<'a> From<&'a Grammar<'a>> for EarleyParser<'a> {
     fn from(grammar: &'a Grammar) -> Self {
         let start = 0_usize;
