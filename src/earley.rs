@@ -11,7 +11,18 @@ struct EarleyItem<'a> {
 struct EarleyParser<'a> {
     grammar: &'a Grammar<'a>,
     pos: usize,
-    state_sets: Vec<HashSet<EarleyItem<'a>>>,
+    state_sets: Vec<StateSet<'a>>,
+}
+
+struct StateSet<'a>(HashSet<EarleyItem<'a>>);
+
+impl fmt::Display for StateSet<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        for item in &self.0 {
+            writeln!(f, "{}", item)?;
+        }
+        write!(f, "")
+    }
 }
 
 impl<'a> EarleyItem<'a> {
@@ -20,6 +31,15 @@ impl<'a> EarleyItem<'a> {
     }
 }
 
+impl fmt::Display for EarleyParser<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        for (i, state_set) in self.state_sets.iter().enumerate() {
+            writeln!(f, "=== {} ===", i)?;
+            writeln!(f, "{}", state_set)?;
+        }
+        write!(f, "")
+    }
+}
 
 impl<'a> From<&'a Grammar<'a>> for EarleyParser<'a> {
     fn from(grammar: &'a Grammar) -> Self {
@@ -34,7 +54,7 @@ impl<'a> From<&'a Grammar<'a>> for EarleyParser<'a> {
         EarleyParser {
             grammar,
             pos,
-            state_sets: vec![state_set],
+            state_sets: vec![StateSet(state_set)],
         }
     }
 }
@@ -180,8 +200,6 @@ pub fn main() {
     };
     // print!("{}", grammar);
     let parser = EarleyParser::from(&grammar);
-    let s = parser.state_sets.first().unwrap();
-    for item in s.iter() {
-        println!("{}", item)
-    }
+    // let s = parser.state_sets.first().unwrap();
+    println!("{}", parser)
 }
