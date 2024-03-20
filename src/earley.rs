@@ -1,6 +1,23 @@
 use std::collections::HashSet;
 use std::fmt;
 
+#[derive(PartialEq, Eq, Hash, Clone)]
+enum Symbol {
+    Terminal(Vec<char>),
+    Nonterminal { name: String },
+}
+
+#[derive(PartialEq, Eq, Hash, Clone)]
+struct Production {
+    nonterminal: Symbol, //TODO: type-narrow??
+    symbols: Vec<Symbol>,
+}
+
+#[derive(Clone)]
+struct Grammar {
+    productions: Vec<Production>,
+}
+
 #[derive(PartialEq, Eq, Hash)]
 struct EarleyItem {
     production: Production,
@@ -8,13 +25,27 @@ struct EarleyItem {
     start: usize,
 }
 
+struct StateSet(HashSet<EarleyItem>);
+
 struct EarleyParser {
     grammar: Grammar,
     pos: usize,
     state_sets: Vec<StateSet>,
 }
 
-struct StateSet(HashSet<EarleyItem>);
+impl EarleyItem {
+    fn from_production(production: Production, start: usize) -> Self {
+        EarleyItem {
+            production,
+            pos: 0,
+            start,
+        }
+    }
+
+    fn next_symbol(&self) -> Option<&Symbol> {
+        self.production.symbols.get(self.pos)
+    }
+}
 
 impl fmt::Display for StateSet {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -22,12 +53,6 @@ impl fmt::Display for StateSet {
             writeln!(f, "{}", item)?;
         }
         write!(f, "")
-    }
-}
-
-impl EarleyItem {
-    fn next_symbol(&self) -> Option<&Symbol> {
-        self.production.symbols.get(self.pos)
     }
 }
 
@@ -57,33 +82,6 @@ impl From<Grammar> for EarleyParser {
             state_sets: vec![StateSet(state_set)],
         }
     }
-}
-
-impl EarleyItem {
-    fn from_production(production: Production, start: usize) -> Self {
-        EarleyItem {
-            production,
-            pos: 0,
-            start,
-        }
-    }
-}
-
-#[derive(PartialEq, Eq, Hash, Clone)]
-enum Symbol {
-    Terminal(Vec<char>),
-    Nonterminal { name: String },
-}
-
-#[derive(PartialEq, Eq, Hash, Clone)]
-struct Production {
-    nonterminal: Symbol, //TODO: type-narrow??
-    symbols: Vec<Symbol>,
-}
-
-#[derive(Clone)]
-struct Grammar {
-    productions: Vec<Production>,
 }
 
 impl fmt::Display for Grammar {
