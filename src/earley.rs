@@ -2,21 +2,21 @@ use std::collections::HashSet;
 use std::fmt;
 
 #[derive(PartialEq, Eq, Hash)]
-struct EarleyItem<'a> {
-    production: &'a Production<'a>,
+struct EarleyItem {
+    production: Production,
     pos: usize,
     start: usize,
 }
 
-struct EarleyParser<'a> {
-    grammar: &'a Grammar<'a>,
+struct EarleyParser {
+    grammar: Grammar,
     pos: usize,
-    state_sets: Vec<StateSet<'a>>,
+    state_sets: Vec<StateSet>,
 }
 
-struct StateSet<'a>(HashSet<EarleyItem<'a>>);
+struct StateSet(HashSet<EarleyItem>);
 
-impl fmt::Display for StateSet<'_> {
+impl fmt::Display for StateSet {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         for item in &self.0 {
             writeln!(f, "{}", item)?;
@@ -25,13 +25,13 @@ impl fmt::Display for StateSet<'_> {
     }
 }
 
-impl<'a> EarleyItem<'a> {
-    fn next_symbol(&'a self) -> Option<&'a Symbol> {
-        self.production.symbols.get(self.pos).copied()
+impl EarleyItem {
+    fn next_symbol(&self) -> Option<&Symbol> {
+        self.production.symbols.get(self.pos)
     }
 }
 
-impl fmt::Display for EarleyParser<'_> {
+impl fmt::Display for EarleyParser {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         for (i, state_set) in self.state_sets.iter().enumerate() {
             writeln!(f, "=== {} ===", i)?;
@@ -41,15 +41,15 @@ impl fmt::Display for EarleyParser<'_> {
     }
 }
 
-impl<'a> From<&'a Grammar<'a>> for EarleyParser<'a> {
-    fn from(grammar: &'a Grammar) -> Self {
+impl From<Grammar> for EarleyParser {
+    fn from(grammar: Grammar) -> Self {
         let start = 0_usize;
         let pos = 0_usize;
         let state_set = HashSet::<EarleyItem>::from_iter(
             grammar
                 .productions
                 .iter()
-                .map(|production| EarleyItem::from_production(production, start)),
+                .map(|production| EarleyItem::from_production(production.clone(), start)),
         );
         EarleyParser {
             grammar,
@@ -59,33 +59,34 @@ impl<'a> From<&'a Grammar<'a>> for EarleyParser<'a> {
     }
 }
 
-impl<'a> EarleyItem<'a> {
-    fn from_production(production: &'a Production, start: usize) -> Self {
+impl EarleyItem {
+    fn from_production(production: Production, start: usize) -> Self {
         EarleyItem {
             production,
             pos: 0,
-            start: start,
+            start,
         }
     }
 }
 
-#[derive(PartialEq, Eq, Hash)]
+#[derive(PartialEq, Eq, Hash, Clone)]
 enum Symbol {
     Terminal(Vec<char>),
     Nonterminal { name: String },
 }
 
-#[derive(PartialEq, Eq, Hash)]
-struct Production<'a> {
-    nonterminal: &'a Symbol, //TODO: type-narrow??
-    symbols: Vec<&'a Symbol>,
+#[derive(PartialEq, Eq, Hash, Clone)]
+struct Production {
+    nonterminal: Symbol, //TODO: type-narrow??
+    symbols: Vec<Symbol>,
 }
 
-struct Grammar<'a> {
-    productions: Vec<Production<'a>>,
+#[derive(Clone)]
+struct Grammar {
+    productions: Vec<Production>,
 }
 
-impl fmt::Display for Grammar<'_> {
+impl fmt::Display for Grammar {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         for prod in self.productions.iter() {
             writeln!(f, "{}", prod)?;
@@ -94,7 +95,7 @@ impl fmt::Display for Grammar<'_> {
     }
 }
 
-impl fmt::Display for Production<'_> {
+impl fmt::Display for Production {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{} ->", self.nonterminal)?;
         for symbol in self.symbols.iter() {
@@ -127,7 +128,7 @@ impl fmt::Display for Symbol {
     }
 }
 
-impl fmt::Display for EarleyItem<'_> {
+impl fmt::Display for EarleyItem {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let prod = &self.production;
         write!(f, "{} ->", prod.nonterminal)?;
@@ -165,41 +166,41 @@ pub fn main() {
     let grammar = Grammar {
         productions: vec![
             Production {
-                nonterminal: &sum,
-                symbols: vec![&sum, &pm, &product],
+                nonterminal: sum.clone(),
+                symbols: vec![sum.clone(), pm.clone(), product.clone()],
             },
             Production {
-                nonterminal: &sum,
-                symbols: vec![&product],
+                nonterminal: sum.clone(),
+                symbols: vec![product.clone()],
             },
             Production {
-                nonterminal: &product,
-                symbols: vec![&product, &md, &factor],
+                nonterminal: product.clone(),
+                symbols: vec![product.clone(), md.clone(), factor.clone()],
             },
             Production {
-                nonterminal: &product,
-                symbols: vec![&factor],
+                nonterminal: product.clone(),
+                symbols: vec![factor.clone()],
             },
             Production {
-                nonterminal: &factor,
-                symbols: vec![&lparen, &sum, &rparen],
+                nonterminal: factor.clone(),
+                symbols: vec![lparen.clone(), sum.clone(), rparen.clone()],
             },
             Production {
-                nonterminal: &factor,
-                symbols: vec![&number],
+                nonterminal: factor.clone(),
+                symbols: vec![number.clone()],
             },
             Production {
-                nonterminal: &number,
-                symbols: vec![&digit, &number],
+                nonterminal: number.clone(),
+                symbols: vec![digit.clone(), number.clone()],
             },
             Production {
-                nonterminal: &number,
-                symbols: vec![&digit],
+                nonterminal: number.clone(),
+                symbols: vec![digit.clone()],
             },
         ],
     };
     // print!("{}", grammar);
-    let parser = EarleyParser::from(&grammar);
+    let parser = EarleyParser::from(grammar.clone());
     // let s = parser.state_sets.first().unwrap();
     println!("{}", parser)
 }
