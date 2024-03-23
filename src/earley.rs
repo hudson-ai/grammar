@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use indexmap::IndexSet;
 use std::fmt;
 
 #[derive(PartialEq, Eq, Hash, Clone)]
@@ -25,7 +25,12 @@ struct EarleyItem {
     start: usize,
 }
 
-struct StateSet(HashSet<EarleyItem>);
+struct StateSet(IndexSet<EarleyItem>);
+impl FromIterator<EarleyItem> for StateSet {
+    fn from_iter<T: IntoIterator<Item = EarleyItem>>(iter: T) -> Self {
+        StateSet(IndexSet::<EarleyItem>::from_iter(iter))
+    }
+}
 
 struct EarleyParser {
     grammar: Grammar,
@@ -70,16 +75,15 @@ impl From<Grammar> for EarleyParser {
     fn from(grammar: Grammar) -> Self {
         let start = 0_usize;
         let pos = 0_usize;
-        let state_set = HashSet::<EarleyItem>::from_iter(
-            grammar
-                .productions
-                .iter()
-                .map(|production| EarleyItem::from_production(production.clone(), start)),
-        );
+        let state_set: StateSet = grammar
+            .productions
+            .iter()
+            .map(|production| EarleyItem::from_production(production.clone(), start))
+            .collect();
         EarleyParser {
             grammar,
             pos,
-            state_sets: vec![StateSet(state_set)],
+            state_sets: vec![state_set],
         }
     }
 }
