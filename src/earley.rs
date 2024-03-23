@@ -111,18 +111,9 @@ impl fmt::Display for Symbol {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Symbol::Terminal(chars) => {
-                if chars.len() > 1 {
-                    write!(f, "[")?;
-                } else {
-                    write!(f, "'")?;
-                }
-                for ch in chars.iter() {
-                    write!(f, "{}", ch)?;
-                }
-                if chars.len() > 1 {
-                    write!(f, "]")
-                } else {
-                    write!(f, "'")
+                match &chars[..] {
+                    [char] => write!(f, "'{}'", char),
+                    _ => write!(f, "[{}]", String::from_iter(chars))
                 }
             }
             Symbol::Nonterminal { name, .. } => write!(f, "{}", name),
@@ -204,5 +195,5 @@ pub fn main() {
     // print!("{}", grammar);
     let parser = EarleyParser::from(grammar.clone());
     // let s = parser.state_sets.first().unwrap();
-    println!("{}", parser)
+    print!("{}", parser)
 }
