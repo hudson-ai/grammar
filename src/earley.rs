@@ -99,15 +99,23 @@ struct EarleyParser {
     grammar: Grammar,
     pos: usize,
     state_sets: Vec<StateSet>,
+    chars: Vec<char>,
 }
 impl EarleyParser {
-    fn parse(&mut self, input: String) {
-        for char in input.chars() {
-            self.inner_loop(char);
+    fn consume_str(&mut self, input: String) {
+        for ch in input.chars() {
+            self.consume_char(ch);
         }
     }
-    fn inner_loop(&mut self, input: char) {
-        let state_set_pos = self.pos;
+
+    fn consume_char(&mut self, ch: char) {
+        self.chars.push(ch);
+        while let Some(next_state_set) = self.inner_loop(self.pos) {
+            self.state_sets.push(next_state_set);
+            self.pos += 1;
+        }
+    }
+    fn inner_loop(&mut self, state_set_pos: usize) -> Option<StateSet> {
         // Remove state set and replace later
         if state_set_pos != self.state_sets.len() - 1 {
             todo!("Ok, time to figure out the logic for rewinding...")
@@ -136,12 +144,14 @@ impl EarleyParser {
                     //scan
                     // The symbol at the right of the fat dot is terminal. We check if the input matches this symbol.
                     // If it does, we add this item (advanced one step) to the next state set.
-                    if chars.contains(&input) {
-                        next_state_set.0.insert(EarleyItem {
-                            production: item.production.clone(),
-                            start: item.start,
-                            pos: item.pos + 1,
-                        });
+                    if let Some(ch) = self.chars.get(state_set_pos) {
+                        if chars.contains(ch) {
+                            next_state_set.0.insert(EarleyItem {
+                                production: item.production.clone(),
+                                start: item.start,
+                                pos: item.pos + 1,
+                            });
+                        }
                     }
                 }
                 None => {
@@ -165,8 +175,12 @@ impl EarleyParser {
             i += 1;
         }
         self.state_sets.push(curr_state_set);
-        self.state_sets.push(next_state_set);
-        self.pos += 1;
+
+        if !next_state_set.0.is_empty() {
+            Some(next_state_set)
+        } else {
+            None
+        }
     }
 }
 impl From<Grammar> for EarleyParser {
@@ -186,6 +200,7 @@ impl From<Grammar> for EarleyParser {
             grammar,
             pos,
             state_sets: vec![state_set],
+            chars: vec![],
         }
     }
 }
@@ -255,6 +270,6 @@ pub fn main() {
     };
     // print!("{}", grammar);
     let mut parser = EarleyParser::from(grammar.clone());
-    parser.parse("1+(2*3-4)".to_string());
+    parser.consume_str("1+(2*3-4)".to_string());
     print!("{parser}")
 }
