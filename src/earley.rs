@@ -176,7 +176,7 @@ impl From<Grammar> for EarleyParser {
             .map(|production| EarleyItem {
                 production: production.clone(),
                 start,
-                pos: 0,
+                pos,
             })
             .collect();
         EarleyParser {
