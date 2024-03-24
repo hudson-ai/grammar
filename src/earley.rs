@@ -53,14 +53,6 @@ struct EarleyItem {
     start: usize,
 }
 impl EarleyItem {
-    fn from_production(production: Production, start: usize) -> Self {
-        EarleyItem {
-            production,
-            pos: 0,
-            start,
-        }
-    }
-
     fn next_symbol(&self) -> Option<&Symbol> {
         self.production.symbols.get(self.pos)
     }
@@ -83,6 +75,11 @@ impl fmt::Display for EarleyItem {
 }
 
 struct StateSet(IndexSet<EarleyItem>);
+impl StateSet {
+    fn new() -> StateSet {
+        StateSet(IndexSet::<EarleyItem>::new())
+    }
+}
 impl FromIterator<EarleyItem> for StateSet {
     fn from_iter<T: IntoIterator<Item = EarleyItem>>(iter: T) -> Self {
         StateSet(IndexSet::<EarleyItem>::from_iter(iter))
@@ -102,6 +99,88 @@ struct EarleyParser {
     pos: usize,
     state_sets: Vec<StateSet>,
 }
+impl EarleyParser {
+    fn inner_loop(&mut self, input: char) {
+        let pos = self.pos;
+        if pos + 1 >= self.state_sets.len() {
+            self.state_sets.push(StateSet::new())
+        }
+        let curr_state_set: &StateSet =
+            self.state_sets.get(pos).expect("Current state set missing");
+        let mut add_to_current = Vec::<EarleyItem>::new();
+        let mut add_to_next = Vec::<EarleyItem>::new();
+        for item in curr_state_set.0.iter() {
+            match item.next_symbol() {
+                Some(nonterminal @ Symbol::Nonterminal { .. }) => {
+                    // predict
+                    // The symbol at the right of the fat dot is non-terminal.
+                    // We add the the corresponding rules to the current state set.
+                    for production in self.grammar.productions.iter() {
+                        if &production.nonterminal == nonterminal {
+                            add_to_current.push(EarleyItem {
+                                production: production.clone(),
+                                start: pos,
+                                pos: 0,
+                            });
+                        }
+                    }
+                }
+                Some(Symbol::Terminal(chars)) => {
+                    //scan
+                    // The symbol at the right of the fat dot is terminal. We check if the input matches this symbol.
+                    // If it does, we add this item (advanced one step) to the next state set.
+                    if chars.contains(&input) {
+                        add_to_next.push(EarleyItem {
+                            production: item.production.clone(),
+                            start: item.start,
+                            pos: item.pos + 1,
+                        })
+                    }
+                }
+                None => {
+                    // completion
+                    // There is nothing at the right of the fat dot. This means we have a successful partial parse.
+                    // We look for the parent items, and add them (advanced one step) to this state set.
+                    for parent in self
+                        .state_sets
+                        .get(item.start)
+                        .expect("Item has no parent?!")
+                        .0
+                        .iter()
+                    {
+                        match parent.next_symbol() {
+                            Some(nonterminal) if nonterminal == &item.production.nonterminal => {
+                                add_to_current.push(EarleyItem {
+                                    production: parent.production.clone(),
+                                    start: parent.start,
+                                    pos: parent.pos + 1,
+                                })
+                            }
+                            _ => {}
+                        }
+                    }
+                }
+            }
+        }
+
+        let curr_state_set: &mut StateSet = self
+            .state_sets
+            .get_mut(pos)
+            .expect("Current state set missing");
+        for item in add_to_current.into_iter() {
+            curr_state_set.0.insert(item);
+        }
+
+        let next_state_set: &mut StateSet = self
+            .state_sets
+            .get_mut(pos + 1)
+            .expect("Next state set missing");
+        for item in add_to_next.into_iter() {
+            next_state_set.0.insert(item);
+        }
+        self.pos += 1;
+    }
+}
 impl From<Grammar> for EarleyParser {
     fn from(grammar: Grammar) -> Self {
         let start = 0_usize;
@@ -109,7 +188,11 @@ impl From<Grammar> for EarleyParser {
         let state_set: StateSet = grammar
             .productions
             .iter()
-            .map(|production| EarleyItem::from_production(production.clone(), start))
+            .map(|production| EarleyItem {
+                production: production.clone(),
+                start,
+                pos: 0,
+            })
             .collect();
         EarleyParser {
             grammar,
@@ -183,7 +266,11 @@ pub fn main() {
         ],
     };
     // print!("{}", grammar);
-    let parser = EarleyParser::from(grammar.clone());
+    let mut parser = EarleyParser::from(grammar.clone());
     // let s = parser.state_sets.first().unwrap();
-    print!("{}", parser)
+    print!("{}", parser);
+    parser.inner_loop('3');
+    print!("{}", parser);
+    parser.inner_loop('3');
+    print!("{}", parser);
 }
