@@ -101,6 +101,11 @@ struct EarleyParser {
     state_sets: Vec<StateSet>,
 }
 impl EarleyParser {
+    fn parse(&mut self, input: String) {
+        for char in input.chars() {
+            self.inner_loop(char);
+        }
+    }
     fn inner_loop(&mut self, input: char) {
         let pos = self.pos;
         // Remove state set and replace later
@@ -247,10 +252,6 @@ pub fn main() {
     };
     // print!("{}", grammar);
     let mut parser = EarleyParser::from(grammar.clone());
-    // let s = parser.state_sets.first().unwrap();
-    print!("{}", parser);
-    parser.inner_loop('3');
-    print!("{}", parser);
-    parser.inner_loop('3');
-    print!("{}", parser);
+    parser.parse("1+(2*3-4)".to_string());
+    print!("{parser}")
 }
