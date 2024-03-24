@@ -107,9 +107,12 @@ impl EarleyParser {
         }
     }
     fn inner_loop(&mut self, input: char) {
-        let pos = self.pos;
+        let state_set_pos = self.pos;
         // Remove state set and replace later
-        let mut curr_state_set = self.state_sets.remove(pos);
+        if state_set_pos != self.state_sets.len() - 1 {
+            todo!("Ok, time to figure out the logic for rewinding...")
+        }
+        let mut curr_state_set = self.state_sets.remove(state_set_pos);
         let mut next_state_set = StateSet::new();
         let mut i = 0_usize;
         while i < curr_state_set.0.len() {
@@ -123,7 +126,7 @@ impl EarleyParser {
                         if &production.nonterminal == nonterminal {
                             curr_state_set.0.insert(EarleyItem {
                                 production: production.clone(),
-                                start: pos,
+                                start: state_set_pos,
                                 pos: 0,
                             });
                         }
